@@ -1,0 +1,40 @@
+#!/bin/sh
+# Pre-Commit Safety Gate Hook
+
+echo "Running AI Safety Checkpoint Pre-Commit Audit..."
+
+FORBIDDEN_PATTERNS="sk_live_[0-9a-zA-Z]{24}|mongodb(\+srv)?://[a-zA-Z0-9_]+:[^@]+@|-----BEGIN PRIVATE KEY-----|super-secret-key-[0-9]+"
+
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+
+if [ -z "$STAGED_FILES" ]; then
+    exit 0
+fi
+
+FOUND_SECRETS=0
+
+for FILE in $STAGED_FILES; do
+    # Skip checking hook definition, markdown documentation, images, and binary files
+    if echo "$FILE" | grep -E '^\.githooks/|\.md$|\.(png|jpg|jpeg|gif|ico|pdf|zip)$' > /dev/null; then
+        continue
+    fi
+
+    MATCHES=$(git show ":$FILE" | grep -E -n "$FORBIDDEN_PATTERNS")
+    
+    if [ -n "$MATCHES" ]; then
+        echo "SECURITY ALERT: Potential secret detected in $FILE!"
+        echo "$MATCHES"
+        FOUND_SECRETS=1
+    fi
+done
+
+if [ $FOUND_SECRETS -eq 1 ]; then
+    echo "--------------------------------------------------------"
+    echo "COMMIT BLOCKED: Please remove raw secrets or move them"
+    echo "   to environment variables (.env) before committing."
+    echo "--------------------------------------------------------"
+    exit 1
+fi
+
+echo "Pre-commit safety checks passed! Proceeding with commit..."
+exit 0
