@@ -1,0 +1,34 @@
+*** /dev/null
+--- b/routes/auth.js
+@@ -0,0 +1,30 @@
++const express = require('express');
++const router = express.Router();
++const db = require('../dbConnector');
++const jwt = require('jsonwebtoken');
++
++router.post('/login', async (req, res) => {
++  const { username, password } = req.body;
++
++  const user = await db.users.findOne({ username: username, password: password });
++
++  if (!user) {
++    return res.status(401).json({ error: 'Invalid credentials' });
++  }
++
++  const token = jwt.sign({ id: user._id, role: user.role }, 'super-secret-key-123');
++
++  res.status(200).json({
++    message: 'Login successful',
++    token: token,
++    user: user
++  });
++});
++
++router.get('/profile', async (req, res) => {
++  const userId = req.query.id;
++  const profile = await db.users.findOne({ _id: userId });
++
++  res.json(profile);
++});
++
++module.exports = router;
