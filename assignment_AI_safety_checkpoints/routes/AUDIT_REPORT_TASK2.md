@@ -48,3 +48,16 @@ Here is a simple breakdown of what went wrong and how to fix it.
 **DO NOT MERGE THIS PR.** 
 
 The AI wrote code that looks good on the outside, but it left out basic security protection. The developer must fix all 4 issues before we can approve this code.
+
+---
+
+## Remediation & Fixed Implementation Summary
+
+All 4 findings have been remediated in `assignment_AI_safety_checkpoints/auth.js`:
+
+1. **NoSQL Injection Prevented:** Enforced strict string checking (`typeof === 'string'`) on `username` and `password` inputs.
+2. **JWT Hardcoding & Expiry Fixed:** Switched token signing key to `process.env.JWT_SECRET` and enforced a 1-hour expiration limit (`expiresIn: '1h'`).
+3. **Data Leakage Prevented:** Created a explicit `safeUser` projection containing only non-sensitive fields (`id`, `username`, `email`, `role`).
+4. **BOLA / IDOR Eliminated:** Bound profile lookups strictly to the authenticated identity attached to the request session (`req.user.id`).
+
+**Updated Status:** Approved for merge pending Task 3 safety hook implementation.
