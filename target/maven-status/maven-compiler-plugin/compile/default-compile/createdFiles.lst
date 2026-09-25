@@ -1,0 +1,8 @@
+com/bookshelf/book/BookRequest.class
+com/bookshelf/book/BookRepository.class
+com/bookshelf/book/BookService.class
+com/bookshelf/exception/GlobalExceptionHandler.class
+com/bookshelf/BookshelfApplication.class
+com/bookshelf/book/Book.class
+com/bookshelf/book/BookController.class
+com/bookshelf/book/BookStatus.class
