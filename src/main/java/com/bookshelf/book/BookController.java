@@ -45,7 +45,15 @@ public class BookController {
         return bookService.deleteBook(id) ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 
-    @GetMapping("/stats")
+    @GetMapping("/search")
+    public List<Book> searchBooks(@RequestParam String query) {
+        if (query == null || query.trim().isEmpty()) {
+            throw new IllegalArgumentException("Query cannot be empty");
+        }
+        return bookService.searchBooks(query);
+    }
+
+    @GetMapping("/statistics")
     public Map<String, Long> getStats() {
         List<Book> books = bookService.getAllBooks();
         return books.stream().collect(Collectors.groupingBy(b -> b.getStatus().name(), Collectors.counting()));

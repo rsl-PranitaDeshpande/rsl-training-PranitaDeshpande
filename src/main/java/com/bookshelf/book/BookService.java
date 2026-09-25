@@ -2,6 +2,7 @@ package com.bookshelf.book;
 
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.Optional;
 
 @Service
@@ -24,6 +25,14 @@ public class BookService {
 
     public List<Book> getAllBooks() {
         return bookRepository.findAll();
+    }
+
+    public List<Book> searchBooks(String query) {
+        String lowerQuery = query.toLowerCase();
+        return bookRepository.findAll().stream()
+                .filter(b -> (b.getTitle() != null && b.getTitle().toLowerCase().contains(lowerQuery)) ||
+                             (b.getAuthor() != null && b.getAuthor().toLowerCase().contains(lowerQuery)))
+                .collect(Collectors.toList());
     }
 
     public Optional<Book> updateBook(Long id, BookRequest request) {
