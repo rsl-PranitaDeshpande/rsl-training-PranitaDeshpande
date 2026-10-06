@@ -3,11 +3,18 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 
 class Book:
-    def __init__(self, title: str, author: str, year_published: int):
+    def __init__(
+        self,
+        title: str,
+        author: str,
+        year_published: int,
+        isbn: Optional[str] = None,
+    ):
         self.book_id: str = str(uuid.uuid4())
         self.title: str = title
         self.author: str = author
         self.year_published: int = year_published
+        self.isbn: Optional[str] = isbn
         self.added_on: str = datetime.now().isoformat()
         
         # State management
@@ -40,6 +47,7 @@ class Book:
             "title": self.title,
             "author": self.author,
             "year_published": self.year_published,
+            "isbn": self.isbn,
             "is_borrowed": self.is_borrowed,
             "due_date": self.due_date
         }
