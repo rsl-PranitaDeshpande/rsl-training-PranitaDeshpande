@@ -1,0 +1,191 @@
+.container {
+  margin: 0 auto;
+  max-width: 960px;
+  padding: 0 24px;
+}
+
+.site-header {
+  align-items: center;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  justify-content: space-between;
+  padding: 18px 0;
+}
+
+.site-header nav {
+  display: flex;
+  gap: 20px;
+}
+
+.site-header a {
+  color: #252525;
+  text-decoration: none;
+}
+
+.store-name {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.intro {
+  padding: 44px 0 32px;
+}
+
+.intro h1 {
+  font-size: 32px;
+  margin: 0 0 10px;
+}
+
+.intro p,
+.register-section > div > p {
+  color: #555;
+  margin: 0;
+}
+
+.products-section {
+  padding: 16px 0 40px;
+}
+
+.products-section h2,
+.register-section h2 {
+  font-size: 23px;
+  margin: 0 0 18px;
+}
+
+.product-list {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.product-card {
+  border: 1px solid #ddd;
+  padding: 12px;
+}
+
+.product-card img {
+  background: #eee;
+  display: block;
+  height: 155px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.product-card h3 {
+  font-size: 16px;
+  margin: 12px 0 5px;
+}
+
+.product-card p {
+  color: #555;
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+
+.product-meta {
+  color: #555;
+  display: flex;
+  font-size: 13px;
+  justify-content: space-between;
+}
+
+.loading-message,
+.error-message {
+  padding: 18px 0;
+}
+
+.register-section {
+  background: #f4f4f4;
+  display: grid;
+  gap: 32px;
+  grid-template-columns: 1fr 1fr;
+  padding: 28px;
+}
+
+.registered-user {
+  background: white;
+  border: 1px solid #ddd;
+  margin-top: 20px;
+  max-width: 360px;
+  padding: 14px;
+}
+
+.registered-user h3,
+.registered-user p {
+  margin: 0 0 6px;
+}
+
+.registered-user p:last-child {
+  margin-bottom: 0;
+}
+
+.registration-form label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 12px 0 5px;
+}
+
+.registration-form input {
+  border: 1px solid #aaa;
+  border-radius: 2px;
+  box-sizing: border-box;
+  font: inherit;
+  padding: 9px;
+  width: 100%;
+}
+
+.registration-form input[aria-invalid='true'] {
+  border-color: #b42318;
+}
+
+.field-error {
+  color: #b42318;
+  display: block;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.submit-button {
+  background: #252525;
+  border: 0;
+  border-radius: 2px;
+  color: white;
+  cursor: pointer;
+  font: inherit;
+  margin-top: 16px;
+  padding: 10px 14px;
+}
+
+.submit-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.success-message {
+  color: #246b37;
+  margin: 12px 0 0;
+}
+
+.site-footer {
+  border-top: 1px solid #ddd;
+  color: #666;
+  font-size: 13px;
+  margin-top: 36px;
+  padding: 18px 0;
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 0 16px;
+  }
+
+  .intro h1 {
+    font-size: 27px;
+  }
+
+  .register-section {
+    grid-template-columns: 1fr;
+    padding: 20px;
+  }
+}
