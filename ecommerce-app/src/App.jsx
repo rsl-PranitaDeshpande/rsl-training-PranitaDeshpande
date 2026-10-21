@@ -1,12 +1,46 @@
-import { useState } from 'react'
+import { useOptimistic, useState, useTransition } from 'react'
 import { UserContext } from './context/UserContext'
 import { RegistrationForm } from './components/RegistrationForm'
 import { ProductList } from './components/ProductList'
 import { RegisteredUser } from './components/RegisteredUser'
 import './App.css'
 
+function simulateAddToCartRequest() {
+  return new Promise((resolve, reject) => {
+    window.setTimeout(() => {
+      if (Math.random() < 0.2) {
+        reject(new Error('The item could not be added. Please try again.'))
+        return
+      }
+
+      resolve()
+    }, 800)
+  })
+}
+
 function App() {
   const [registeredUser, setRegisteredUser] = useState(null)
+  const [cartCount, setCartCount] = useState(0)
+  const [cartError, setCartError] = useState('')
+  const [optimisticCartCount, addOptimisticCartItem] = useOptimistic(
+    cartCount,
+    (count, amount) => count + amount,
+  )
+  const [isCartPending, startCartTransition] = useTransition()
+
+  function handleAddToCart() {
+    setCartError('')
+    startCartTransition(async () => {
+      addOptimisticCartItem(1)
+
+      try {
+        await simulateAddToCartRequest()
+        setCartCount((count) => count + 1)
+      } catch (error) {
+        setCartError(error.message)
+      }
+    })
+  }
 
   return (
     <UserContext value={registeredUser}>
@@ -22,6 +56,9 @@ function App() {
           <nav aria-label="Main navigation">
             <a href="#products">Products</a>
             <a href="#register">Register</a>
+            <span className="cart-count" aria-live="polite">
+              Cart: {optimisticCartCount}{isCartPending ? ' (updating…)': ''}
+            </span>
           </nav>
         </header>
 
@@ -32,7 +69,11 @@ function App() {
 
         <section className="products-section" id="products">
           <h2>Products</h2>
-          <ProductList />
+          <ProductList
+            onAddToCart={handleAddToCart}
+            isCartPending={isCartPending}
+            cartError={cartError}
+          />
         </section>
 
         <section className="register-section" id="register">
