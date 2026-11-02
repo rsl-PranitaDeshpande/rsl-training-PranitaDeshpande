@@ -1,5 +1,6 @@
 import React from "react";
-import { useCartState } from "../context/CartContext";
+import { useAtomValue } from "jotai";
+import { totalItemsAtom } from "../store/jotaiStore";
 
 interface HeaderProps {
   onOpenCart: () => void;
@@ -25,7 +26,7 @@ const Toolbar: React.FC<{ onOpenCart: () => void }> = ({ onOpenCart }) => {
         color: "#fff",
       }}
     >
-      <h2>ShopCart</h2>
+      <h2 style={{ color: "#fff" }}>ShopCart</h2>
       <button
         onClick={onOpenCart}
         style={{
@@ -44,8 +45,8 @@ const Toolbar: React.FC<{ onOpenCart: () => void }> = ({ onOpenCart }) => {
 };
 
 const CartBadge: React.FC = () => {
-  const { items } = useCartState();
-  const totalCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  // Reads total count directly from derived Jotai atom without recalculating in render
+  const totalCount = useAtomValue(totalItemsAtom);
 
   if (totalCount === 0) return null;
 
