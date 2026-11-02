@@ -1,5 +1,5 @@
 import React from "react";
-import { useCartState, useCartDispatch } from "../context/CartContext";
+import { useCartStore, selectTotalPrice } from "../store/useCartStore";
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -7,6 +7,12 @@ interface CartDrawerProps {
 }
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
+  const checkoutStatus = useCartStore((state) => state.checkoutStatus);
+  const checkoutError = useCartStore((state) => state.checkoutError);
+  const lastOrderResult = useCartStore((state) => state.lastOrderResult);
+  const checkout = useCartStore((state) => state.checkout);
+  const resetCheckout = useCartStore((state) => state.resetCheckout);
+
   if (!isOpen) return null;
 
   return (
@@ -53,36 +59,81 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        <CartItemsList />
+        {checkoutStatus === "success" ? (
+          <div style={{ marginTop: "2rem", textAlign: "center" }}>
+            <h3 style={{ color: "#059669" }}>🎉 Checkout Successful!</h3>
+            <p>
+              Order ID: <strong>{lastOrderResult?.id}</strong>
+            </p>
+            <p>
+              Total Paid: <strong>${lastOrderResult?.total.toFixed(2)}</strong>
+            </p>
+            <button
+              style={{
+                background: "#2563eb",
+                color: "#fff",
+                border: "none",
+                padding: "8px 16px",
+                borderRadius: "4px",
+                cursor: "pointer",
+                marginTop: "1rem",
+              }}
+              onClick={() => {
+                resetCheckout();
+                onClose();
+              }}
+            >
+              Back to Store
+            </button>
+          </div>
+        ) : (
+          <>
+            <CartItemsList />
 
-        <div style={{ marginTop: "2rem" }}>
-          <button
-            style={{
-              background: "#2563eb",
-              color: "#fff",
-              border: "none",
-              padding: "12px",
-              borderRadius: "4px",
-              cursor: "pointer",
-              width: "100%",
-            }}
-          >
-            Proceed to Checkout
-          </button>
-        </div>
+            {checkoutError && (
+              <p
+                style={{
+                  color: "#ef4444",
+                  marginTop: "1rem",
+                  fontSize: "0.9rem",
+                }}
+              >
+                {checkoutError}
+              </p>
+            )}
+
+            <div style={{ marginTop: "2rem" }}>
+              <button
+                disabled={checkoutStatus === "submitting"}
+                style={{
+                  background:
+                    checkoutStatus === "submitting" ? "#93c5fd" : "#2563eb",
+                  color: "#fff",
+                  border: "none",
+                  padding: "12px",
+                  borderRadius: "4px",
+                  cursor:
+                    checkoutStatus === "submitting" ? "not-allowed" : "pointer",
+                  width: "100%",
+                }}
+                onClick={checkout}
+              >
+                {checkoutStatus === "submitting"
+                  ? "Processing Checkout..."
+                  : "Proceed to Checkout"}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
 };
 
 const CartItemsList: React.FC = () => {
-  const { items } = useCartState();
-  const dispatch = useCartDispatch();
-
-  const grandTotal = items.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
-    0,
-  );
+  const items = useCartStore((state) => state.items);
+  const removeItem = useCartStore((state) => state.removeItem);
+  const totalPrice = useCartStore(selectTotalPrice); // Derived selector
 
   if (items.length === 0) {
     return <p style={{ marginTop: "1.5rem" }}>Your cart is empty.</p>;
@@ -118,12 +169,7 @@ const CartItemsList: React.FC = () => {
                 borderRadius: "4px",
                 cursor: "pointer",
               }}
-              onClick={() =>
-                dispatch({
-                  type: "REMOVE_ITEM",
-                  payload: { id: item.product.id },
-                })
-              }
+              onClick={() => removeItem(item.product.id)}
             >
               Remove
             </button>
@@ -140,7 +186,7 @@ const CartItemsList: React.FC = () => {
         }}
       >
         <span>Total:</span>
-        <span>${grandTotal.toFixed(2)}</span>
+        <span>${totalPrice.toFixed(2)}</span>
       </div>
     </div>
   );

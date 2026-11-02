@@ -1,6 +1,7 @@
+// src/components/Catalog.tsx
 import React, { useEffect, useState } from "react";
 import type { Product } from "../types";
-import { useCartDispatch } from "../context/CartContext";
+import { useCartStore } from "../store/useCartStore";
 
 export const Catalog: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -29,7 +30,7 @@ export const Catalog: React.FC = () => {
 
   return (
     <main style={{ padding: "2rem" }}>
-      <h2>Catalog</h2>
+      <h2>Catalog (Zustand Powered)</h2>
       <div
         style={{
           display: "grid",
@@ -46,8 +47,9 @@ export const Catalog: React.FC = () => {
 };
 
 const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
-  // Uses only dispatch context, avoiding re-renders when state changes
-  const dispatch = useCartDispatch();
+  // CRITICAL: Subscribes strictly to the addItem function pointer.
+  // This component will NEVER re-render when cart items update!
+  const addItem = useCartStore((state) => state.addItem);
 
   return (
     <div
@@ -70,7 +72,7 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
           cursor: "pointer",
           width: "100%",
         }}
-        onClick={() => dispatch({ type: "ADD_ITEM", payload: product })}
+        onClick={() => addItem(product)}
       >
         Add to Cart
       </button>
