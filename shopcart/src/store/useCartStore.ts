@@ -1,101 +1,108 @@
-// src/store/useCartStore.ts
 import { create } from "zustand";
-import type { Product, CartItem, CheckoutResult } from "../types";
+import { persist, createJSONStorage } from "zustand/middleware";
+import type { CartItem, Product } from "../types";
 
-export type CheckoutStatus = "idle" | "submitting" | "success" | "error";
+type Order = Record<string, unknown>;
 
-interface CartStoreState {
+export interface CartStore {
   items: CartItem[];
-  checkoutStatus: CheckoutStatus;
+  checkoutStatus: "idle" | "submitting" | "success" | "error";
   checkoutError: string | null;
-  lastOrderResult: CheckoutResult | null;
+  lastOrderResult: Order | null;
 
   // Actions
   addItem: (product: Product) => void;
   removeItem: (productId: string) => void;
   clearCart: () => void;
   checkout: () => Promise<void>;
-  resetCheckout: () => void;
 }
 
-export const useCartStore = create<CartStoreState>((set, get) => ({
-  items: [],
-  checkoutStatus: "idle",
-  checkoutError: null,
-  lastOrderResult: null,
+export const useCartStore = create<CartStore>()(
+  persist(
+    (set, get) => ({
+      items: [],
+      checkoutStatus: "idle",
+      checkoutError: null,
+      lastOrderResult: null,
 
-  addItem: (product) =>
-    set((state) => {
-      const existingIndex = state.items.findIndex(
-        (i) => i.product.id === product.id,
-      );
-      if (existingIndex > -1) {
-        const updated = [...state.items];
-        updated[existingIndex] = {
-          ...updated[existingIndex],
-          quantity: updated[existingIndex].quantity + 1,
-        };
-        return { items: updated };
-      }
-      return { items: [...state.items, { product, quantity: 1 }] };
+      addItem: (product: Product) => {
+        const { items } = get();
+        const existingItem = items.find(
+          (item) => item.product.id === product.id,
+        );
+
+        if (existingItem) {
+          set({
+            items: items.map((item) =>
+              item.product.id === product.id
+                ? { ...item, quantity: item.quantity + 1 }
+                : item,
+            ),
+          });
+        } else {
+          set({
+            items: [...items, { product, quantity: 1 }],
+          });
+        }
+      },
+
+      removeItem: (productId: string) => {
+        const { items } = get();
+        set({
+          items: items.filter((item) => item.product.id !== productId),
+        });
+      },
+
+      clearCart: () => set({ items: [] }),
+
+      checkout: async () => {
+        const { items } = get();
+        if (items.length === 0) return;
+
+        set({ checkoutStatus: "submitting", checkoutError: null });
+
+        try {
+          const response = await fetch("/api/orders", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              items,
+              total: selectTotalPrice(get()),
+              createdAt: new Date().toISOString(),
+            }),
+          });
+
+          if (!response.ok) throw new Error("Order submission failed");
+
+          const orderData: Order = await response.json();
+
+          set({
+            items: [],
+            checkoutStatus: "success",
+            lastOrderResult: orderData,
+          });
+        } catch (error: any) {
+          set({
+            checkoutStatus: "error",
+            checkoutError: error.message || "Something went wrong",
+          });
+        }
+      },
     }),
+    {
+      name: "shopcart-storage", // Key used in localStorage
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({ items: state.items }),
+    },
+  ),
+);
 
-  removeItem: (productId) =>
-    set((state) => ({
-      items: state.items.filter((i) => i.product.id !== productId),
-    })),
+// Derived Selectors (Kept outside store definition for optimal re-render isolation)
+export const selectTotalCount = (state: CartStore) =>
+  state.items.reduce((sum, item) => sum + item.quantity, 0);
 
-  clearCart: () => set({ items: [] }),
-
-  // Asynchronous Checkout Action reading state directly via get()
-  checkout: async () => {
-    const { items } = get();
-    if (items.length === 0) return;
-
-    set({ checkoutStatus: "submitting", checkoutError: null });
-
-    const total = selectTotalPrice(get());
-
-    try {
-      const response = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items,
-          total,
-          createdAt: new Date().toISOString(),
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Order failed with status ${response.status}`);
-      }
-
-      const result: CheckoutResult = await response.json();
-
-      set({
-        checkoutStatus: "success",
-        lastOrderResult: result,
-        items: [], // Clear cart on success
-      });
-    } catch (err: any) {
-      set({
-        checkoutStatus: "error",
-        checkoutError:
-          err.message || "An unexpected error occurred during checkout",
-      });
-    }
-  },
-
-  resetCheckout: () => set({ checkoutStatus: "idle", checkoutError: null }),
-}));
-
-// Derived Selectors (Pure functions on store state)
-export const selectTotalPrice = (state: CartStoreState): number =>
+export const selectTotalPrice = (state: CartStore) =>
   state.items.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
     0,
   );
-
-export const selectTotalCount = (state: CartStoreState): number =>
-  state.items.reduce((sum, item) => sum + item.quantity, 0);
