@@ -1,68 +1,64 @@
 import React, { useEffect, useState } from "react";
+import { useSetAtom } from "jotai";
+import { addToCartAtom } from "../store/jotaiStore";
 import type { Product } from "../types";
-import { useCartDispatch } from "../context/CartContext";
 
 export const Catalog: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch("/api/products")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch products");
-        return res.json();
-      })
-      .then((data: Product[]) => {
+      .then((res) => res.json())
+      .then((data) => {
         setProducts(data);
         setLoading(false);
       })
       .catch((err) => {
-        setError(err.message);
+        console.error("Failed to fetch products:", err);
         setLoading(false);
       });
   }, []);
 
-  if (loading) return <p style={{ padding: "2rem" }}>Loading products...</p>;
-  if (error)
-    return <p style={{ padding: "2rem", color: "red" }}>Error: {error}</p>;
-
-  return (
-    <main style={{ padding: "2rem" }}>
-      <h2>Catalog</h2>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-          gap: "1.5rem",
-        }}
-      >
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
-    </main>
-  );
-};
-
-const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
-  // Uses only dispatch context, avoiding re-renders when state changes
-  const dispatch = useCartDispatch();
+  if (loading) return <p style={{ padding: "1rem" }}>Loading products...</p>;
 
   return (
     <div
       style={{
-        border: "1px solid #ccc",
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+        gap: "1rem",
+        padding: "1rem",
+      }}
+    >
+      {products.map((product) => (
+        <ProductCard key={product.id} product={product} />
+      ))}
+    </div>
+  );
+};
+
+const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
+  // ✅ Subscribes ONLY to the setter action (never re-renders on cart changes)
+  const addToCart = useSetAtom(addToCartAtom);
+
+  return (
+    <div
+      style={{
+        border: "1px solid #e2e8f0",
         borderRadius: "8px",
         padding: "1rem",
         background: "#fff",
       }}
     >
       <h3>{product.name}</h3>
-      <p style={{ fontWeight: "bold" }}>${product.price.toFixed(2)}</p>
+      <p style={{ fontWeight: "bold", color: "#2563eb" }}>
+        ${product.price.toFixed(2)}
+      </p>
       <button
+        onClick={() => addToCart(product)}
         style={{
-          background: "#059669",
+          background: "#10b981",
           color: "#fff",
           border: "none",
           padding: "8px 12px",
@@ -70,7 +66,6 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
           cursor: "pointer",
           width: "100%",
         }}
-        onClick={() => dispatch({ type: "ADD_ITEM", payload: product })}
       >
         Add to Cart
       </button>
