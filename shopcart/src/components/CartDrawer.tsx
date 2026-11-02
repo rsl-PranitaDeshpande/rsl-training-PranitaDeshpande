@@ -1,4 +1,7 @@
 import React from "react";
+import { useCheckoutActor } from "../context/CheckoutContext";
+import { useSelector } from "@xstate/react";
+import { CheckoutButton } from "./CheckoutButton";
 import { useCartStore, selectTotalPrice } from "../store/useCartStore";
 
 interface CartDrawerProps {
@@ -7,141 +10,73 @@ interface CartDrawerProps {
 }
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
-  const checkoutStatus = useCartStore((state) => state.checkoutStatus);
-  const checkoutError = useCartStore((state) => state.checkoutError);
-  const lastOrderResult = useCartStore((state) => state.lastOrderResult);
-  const checkout = useCartStore((state) => state.checkout);
-  const resetCheckout = useCartStore((state) => state.resetCheckout);
-
   if (!isOpen) return null;
 
   return (
     <div
       style={{
         position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.5)",
+        top: 0,
+        right: 0,
+        bottom: 0,
+        width: "360px",
+        background: "#fff",
+        boxShadow: "-2px 0 8px rgba(0,0,0,0.15)",
+        zIndex: 1000,
         display: "flex",
-        justifyContent: "flex-end",
+        flexDirection: "column",
       }}
-      onClick={onClose}
     >
       <div
         style={{
-          width: "380px",
-          background: "#fff",
-          height: "100%",
-          padding: "1.5rem",
-          boxSizing: "border-box",
+          padding: "1rem",
+          background: "#1e293b",
+          color: "#fff",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
         }}
-        onClick={(e) => e.stopPropagation()}
       >
-        <div
+        <h3 style={{ margin: 0, color: "#fff" }}>Your Cart</h3>
+        <button
+          onClick={onClose}
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            borderBottom: "1px solid #eee",
-            paddingBottom: "1rem",
+            background: "transparent",
+            border: "none",
+            color: "#fff",
+            fontSize: "1.2rem",
+            cursor: "pointer",
           }}
         >
-          <h2>Your Cart</h2>
-          <button
-            style={{
-              background: "none",
-              border: "none",
-              fontSize: "1.5rem",
-              cursor: "pointer",
-            }}
-            onClick={onClose}
-          >
-            &times;
-          </button>
-        </div>
+          ✕
+        </button>
+      </div>
 
-        {checkoutStatus === "success" ? (
-          <div style={{ marginTop: "2rem", textAlign: "center" }}>
-            <h3 style={{ color: "#059669" }}>🎉 Checkout Successful!</h3>
-            <p>
-              Order ID: <strong>{lastOrderResult?.id}</strong>
-            </p>
-            <p>
-              Total Paid: <strong>${lastOrderResult?.total.toFixed(2)}</strong>
-            </p>
-            <button
-              style={{
-                background: "#2563eb",
-                color: "#fff",
-                border: "none",
-                padding: "8px 16px",
-                borderRadius: "4px",
-                cursor: "pointer",
-                marginTop: "1rem",
-              }}
-              onClick={() => {
-                resetCheckout();
-                onClose();
-              }}
-            >
-              Back to Store
-            </button>
-          </div>
-        ) : (
-          <>
-            <CartItemsList />
+      <div style={{ flex: 1, overflowY: "auto", padding: "1rem" }}>
+        <CartErrorBanner />
+        <CartItemsList />
+      </div>
 
-            {checkoutError && (
-              <p
-                style={{
-                  color: "#ef4444",
-                  marginTop: "1rem",
-                  fontSize: "0.9rem",
-                }}
-              >
-                {checkoutError}
-              </p>
-            )}
-
-            <div style={{ marginTop: "2rem" }}>
-              <button
-                disabled={checkoutStatus === "submitting"}
-                style={{
-                  background:
-                    checkoutStatus === "submitting" ? "#93c5fd" : "#2563eb",
-                  color: "#fff",
-                  border: "none",
-                  padding: "12px",
-                  borderRadius: "4px",
-                  cursor:
-                    checkoutStatus === "submitting" ? "not-allowed" : "pointer",
-                  width: "100%",
-                }}
-                onClick={checkout}
-              >
-                {checkoutStatus === "submitting"
-                  ? "Processing Checkout..."
-                  : "Proceed to Checkout"}
-              </button>
-            </div>
-          </>
-        )}
+      <div style={{ padding: "1rem", borderTop: "1px solid #e2e8f0" }}>
+        <CheckoutButton />
       </div>
     </div>
   );
 };
 
+// Internal leaf component reading items directly from Zustand
 const CartItemsList: React.FC = () => {
   const items = useCartStore((state) => state.items);
   const removeItem = useCartStore((state) => state.removeItem);
-  const totalPrice = useCartStore(selectTotalPrice); // Derived selector
+  const totalPrice = useCartStore(selectTotalPrice);
 
   if (items.length === 0) {
-    return <p style={{ marginTop: "1.5rem" }}>Your cart is empty.</p>;
+    return <p style={{ color: "#64748b" }}>Your cart is empty.</p>;
   }
 
   return (
-    <div style={{ marginTop: "1rem" }}>
-      <ul style={{ listStyle: "none", padding: 0 }}>
+    <div>
+      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
         {items.map((item) => (
           <li
             key={item.product.id}
@@ -150,17 +85,18 @@ const CartItemsList: React.FC = () => {
               justifyContent: "space-between",
               alignItems: "center",
               marginBottom: "1rem",
-              borderBottom: "1px solid #f0f0f0",
               paddingBottom: "0.5rem",
+              borderBottom: "1px solid #e2e8f0",
             }}
           >
             <div>
-              <strong>{item.product.name}</strong>
-              <div style={{ fontSize: "0.85rem", color: "#666" }}>
-                ${item.product.price} × {item.quantity}
-              </div>
+              <p style={{ margin: 0, fontWeight: 600 }}>{item.product.name}</p>
+              <p style={{ margin: 0, fontSize: "0.85rem", color: "#64748b" }}>
+                Qty: {item.quantity} × ${item.product.price.toFixed(2)}
+              </p>
             </div>
             <button
+              onClick={() => removeItem(item.product.id)}
               style={{
                 background: "#ef4444",
                 color: "#fff",
@@ -168,8 +104,8 @@ const CartItemsList: React.FC = () => {
                 padding: "4px 8px",
                 borderRadius: "4px",
                 cursor: "pointer",
+                fontSize: "0.75rem",
               }}
-              onClick={() => removeItem(item.product.id)}
             >
               Remove
             </button>
@@ -181,7 +117,6 @@ const CartItemsList: React.FC = () => {
           display: "flex",
           justifyContent: "space-between",
           fontWeight: "bold",
-          fontSize: "1.1rem",
           marginTop: "1rem",
         }}
       >
@@ -189,5 +124,32 @@ const CartItemsList: React.FC = () => {
         <span>${totalPrice.toFixed(2)}</span>
       </div>
     </div>
+  );
+};
+
+const CartErrorBanner: React.FC = () => {
+  const actorRef = useCheckoutActor();
+  const error = useSelector(
+    actorRef,
+    (snapshot) =>
+      (snapshot as { context: { error: string | null } }).context.error,
+  );
+
+  if (!error) return null;
+
+  return (
+    <p
+      role="alert"
+      style={{
+        color: "#b91c1c",
+        background: "#fef2f2",
+        border: "1px solid #fecaca",
+        borderRadius: "4px",
+        padding: "0.75rem",
+        margin: "0 0 1rem",
+      }}
+    >
+      {error}
+    </p>
   );
 };
